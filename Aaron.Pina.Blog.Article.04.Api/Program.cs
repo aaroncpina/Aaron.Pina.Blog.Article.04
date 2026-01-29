@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Aaron.Pina.Blog.Article._04.Api;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
@@ -24,7 +25,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ClockSkew = TimeSpan.FromMinutes(5)
     };
 });
-
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -32,16 +32,17 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/protected", () => "Secret data!")
+    .RequireAuthorization();
+
 app.MapGet("/login", () =>
 {
     var now = DateTime.UtcNow;
-    
     var claims = new[]
     {
         new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
         new Claim(JwtRegisteredClaimNames.Name, "Aaron Pina")
     };
-
     var tokenDescriptor = new SecurityTokenDescriptor
     {
         IssuedAt = now,
@@ -51,14 +52,14 @@ app.MapGet("/login", () =>
         Subject = new ClaimsIdentity(claims),
         SigningCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256)
     };
-
     var handler = new JwtSecurityTokenHandler();
     var token = handler.CreateToken(tokenDescriptor);
-
-    return Results.Ok(new { Token = handler.WriteToken(token) });
+    var response = new TokenResponse(
+        handler.WriteToken(token),
+        RefreshTokenGenerator.Generate(),
+        TimeSpan.FromMinutes(15).TotalSeconds);
+    var entity = response.ToEntity();
+    return Results.Ok(response);
 }).AllowAnonymous();
-
-app.MapGet("/protected", () => "Secret data!")
-    .RequireAuthorization();
 
 app.Run();
