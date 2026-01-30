@@ -10,9 +10,10 @@ public static class TokenExtensions
     
     extension(TokenResponse response)
     {
-        public TokenEntity ToEntity() => 
+        public TokenEntity ToEntity(Guid userId = default) => 
             new()
             {
+                UserId = userId,
                 Token = response.Token,
                 RefreshToken = response.RefreshToken,
                 ExpiresAt = DateTime.UtcNow.AddSeconds(response.ExpiresIn),

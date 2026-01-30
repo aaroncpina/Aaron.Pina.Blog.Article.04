@@ -23,30 +23,34 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/protected", () => "Secret data!")
-    .RequireAuthorization();
+app.MapGet("/user", (HttpContext context) => context.User.FindFirstValue(Sub))
+   .RequireAuthorization();
 
 app.MapGet("/token", (TokenRepository repository) =>
 {
     var now = DateTime.UtcNow;
+    var userId = Guid.NewGuid(); 
     var tokenDescriptor = new SecurityTokenDescriptor
     {
         IssuedAt = now,
-        Expires = now.AddMinutes(30),
+        Expires = now.AddMinutes(5),
         Issuer = "https://localhost",
         Audience = "https://localhost",
-        Subject = new ClaimsIdentity([new Claim(Sub, Guid.NewGuid().ToString())]),
+        Subject = new ClaimsIdentity([new Claim(Sub, userId.ToString())]),
         SigningCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256)
     };
     var handler = new JwtSecurityTokenHandler();
     var token = handler.CreateToken(tokenDescriptor);
-    var response = new TokenResponse(
-        handler.WriteToken(token),
-        TokenGenerator.GenerateRefreshToken(),
-        TimeSpan.FromMinutes(15).TotalSeconds);
-    var entity = response.ToEntity();
+    var entity = new TokenEntity
+    {
+        UserId = userId,
+        Token = handler.WriteToken(token),
+        ExpiresAt = tokenDescriptor.Expires.Value,
+        CreatedAt = tokenDescriptor.IssuedAt.Value,
+        RefreshToken = TokenGenerator.GenerateRefreshToken()
+    };
     repository.SaveToken(entity);
-    return Results.Ok(response);
+    return Results.Ok(entity.ToResponse());
 }).AllowAnonymous();
 
 app.Run();
