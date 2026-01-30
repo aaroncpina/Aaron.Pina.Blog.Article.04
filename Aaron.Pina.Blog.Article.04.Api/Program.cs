@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Aaron.Pina.Blog.Article._04.Api;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Security.Claims;
+
+const double expiresIn = 1;
 
 using var rsa = RSA.Create(2048);
 var rsaKey = new RsaSecurityKey(rsa);
@@ -43,24 +44,14 @@ app.MapGet("/token", (TokenRepository repository, Guid userId) =>
             return Results.Ok(existing.ToResponse());
         }
         var now = DateTime.UtcNow;
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            IssuedAt = now,
-            Expires = now.AddMinutes(1),
-            Issuer = "https://localhost",
-            Audience = "https://localhost",
-            Subject = new ClaimsIdentity([new Claim("sub", userId.ToString())]),
-            SigningCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256)
-        };
-        var handler = new JwtSecurityTokenHandler();
-        var token = handler.CreateToken(tokenDescriptor);
+        var exp = now.AddMinutes(expiresIn);
         var entity = new TokenEntity
         {
             UserId = userId,
-            Token = handler.WriteToken(token),
-            ExpiresAt = tokenDescriptor.Expires.Value,
-            CreatedAt = tokenDescriptor.IssuedAt.Value,
-            RefreshToken = TokenGenerator.GenerateRefreshToken()
+            ExpiresAt = exp,
+            CreatedAt = now,
+            RefreshToken = TokenGenerator.GenerateRefreshToken(),
+            Token = TokenGenerator.GenerateToken(rsaKey, userId, now, expiresIn)
         };
         repository.SaveToken(entity);
         return Results.Ok(entity.ToResponse());
