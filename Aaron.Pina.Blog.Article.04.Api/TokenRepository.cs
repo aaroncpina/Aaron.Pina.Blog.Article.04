@@ -1,17 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace Aaron.Pina.Blog.Article._04.Api;
 
-public class TokenRepository(DbContextOptions<TokenDbContext> options)
+public class TokenRepository(TokenDbContext dbContext)
 {
-    private readonly TokenDbContext _dbContext = new(options);
-    
     public void SaveToken(TokenEntity token)
     {
-        _dbContext.Add(token);
-        _dbContext.SaveChanges();
+        dbContext.Add(token);
+        dbContext.SaveChanges();
+    }
+
+    public void UpdateToken(TokenEntity token)
+    {
+        dbContext.Update(token);
+        dbContext.SaveChanges();
     }
 
     public TokenEntity? TryGetByUserId(Guid userId) =>
-        _dbContext.Tokens.FirstOrDefault(t => t.UserId == userId);
+        dbContext.Tokens.FirstOrDefault(t => t.UserId == userId);
+
+    public TokenEntity? TryGetByRefreshToken(string refreshToken) =>
+        dbContext.Tokens.FirstOrDefault(t => t.RefreshToken == refreshToken);
 }

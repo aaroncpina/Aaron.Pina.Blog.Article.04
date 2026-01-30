@@ -33,15 +33,11 @@ app.MapGet("/token", (TokenRepository repository, Guid userId) =>
         var existing = repository.TryGetByUserId(userId);
         if (existing is not null)
         {
-            if (existing.ExpiresAt < DateTime.UtcNow)
+            return Results.BadRequest(new
             {
-                return Results.BadRequest(new
-                {
-                    Error = "User already has an active token",
-                    Message = "Use the /refresh endpoint to get a new token"
-                });
-            }
-            return Results.Ok(existing.ToResponse());
+                Error = "User already has an active token",
+                Message = "Use the /refresh endpoint with your refresh token to get a new token"
+            });
         }
         var now = DateTime.UtcNow;
         var exp = now.AddMinutes(expiresIn);
@@ -55,6 +51,23 @@ app.MapGet("/token", (TokenRepository repository, Guid userId) =>
         };
         repository.SaveToken(entity);
         return Results.Ok(entity.ToResponse());
+    })
+   .AllowAnonymous();
+
+app.MapPost("/refresh", (TokenRepository repository, HttpContext context) =>
+    {
+        var refreshToken = context.Request.Form["refresh_token"].FirstOrDefault();
+        if (string.IsNullOrEmpty(refreshToken)) return Results.BadRequest();
+        var existing = repository.TryGetByRefreshToken(refreshToken);
+        if (existing is null) return Results.Unauthorized();
+        var now = DateTime.UtcNow;
+        var exp = now.AddMinutes(expiresIn);
+        existing.ExpiresAt = exp;
+        existing.CreatedAt = now;
+        existing.RefreshToken = TokenGenerator.GenerateRefreshToken();
+        existing.Token = TokenGenerator.GenerateToken(rsaKey, existing.UserId, now, expiresIn);
+        repository.UpdateToken(existing);
+        return Results.Ok(existing.ToResponse());
     })
    .AllowAnonymous();
 
