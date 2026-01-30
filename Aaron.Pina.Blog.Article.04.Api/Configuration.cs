@@ -10,15 +10,20 @@ public static class Configuration
     public static class JwtBearer
     {
         public static Action<JwtBearerOptions> Options(RSA rsa) =>
-            options => options.TokenValidationParameters = new()
+            options =>
             {
-                ValidateIssuer = true,
-                ValidIssuer = "https://localhost",
-                ValidateAudience = true,
-                ValidAudience = "https://localhost",
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new RsaSecurityKey(rsa.ExportParameters(false))
+                options.TokenValidationParameters = new()
+                {
+                    ClockSkew = TimeSpan.Zero,
+                    ValidateIssuer = true,
+                    ValidIssuer = "https://localhost",
+                    ValidateAudience = true,
+                    ValidAudience = "https://localhost",
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new RsaSecurityKey(rsa.ExportParameters(false))
+                };
+                options.MapInboundClaims = false;
             };
     }
 

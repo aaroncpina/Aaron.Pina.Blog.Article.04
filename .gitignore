@@ -366,4 +366,4 @@ __pycache__/
 *.xsd.cs
 
 # Local files
-tokens.db
+tokens.db*

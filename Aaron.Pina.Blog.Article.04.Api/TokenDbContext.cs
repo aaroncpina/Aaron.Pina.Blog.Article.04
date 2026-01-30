@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Aaron.Pina.Blog.Article._04.Api;
 
-public class TokenContext : DbContext
+public class TokenDbContext(DbContextOptions<TokenDbContext> options) : DbContext(options)
 {
     public DbSet<TokenEntity> Tokens => Set<TokenEntity>();
 }
