@@ -4,8 +4,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Security.Claims;
 
-const double expiresIn = 1;
-
 using var rsa = RSA.Create(2048);
 var rsaKey = new RsaSecurityKey(rsa);
 
@@ -28,9 +26,9 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/register", () => Results.Ok(Guid.NewGuid()))
    .AllowAnonymous();
 
-app.MapGet("/token", (TokenRepository repository, Guid userId) =>
+app.MapGet("/token", (IConfiguration config, TokenRepository repository, Guid userId) =>
     {
-        var existing = repository.TryGetByUserId(userId);
+        var existing = repository.TryGetTokenByUserId(userId);
         if (existing is not null)
         {
             return Results.BadRequest(new
@@ -39,6 +37,7 @@ app.MapGet("/token", (TokenRepository repository, Guid userId) =>
                 Message = "Use the /refresh endpoint with your refresh token to get a new token"
             });
         }
+        if (!double.TryParse(config["TokenLifetime"], out var expiresIn)) expiresIn = 10;
         var now = DateTime.UtcNow;
         var exp = now.AddMinutes(expiresIn);
         var entity = new TokenEntity
@@ -54,16 +53,16 @@ app.MapGet("/token", (TokenRepository repository, Guid userId) =>
     })
    .AllowAnonymous();
 
-app.MapPost("/refresh", (TokenRepository repository, HttpContext context) =>
+app.MapPost("/refresh", (IConfiguration config, HttpContext context, TokenRepository repository) =>
     {
         var refreshToken = context.Request.Form["refresh_token"].FirstOrDefault();
         if (string.IsNullOrEmpty(refreshToken)) return Results.BadRequest();
-        var existing = repository.TryGetByRefreshToken(refreshToken);
+        var existing = repository.TryGetTokenByRefreshToken(refreshToken);
         if (existing is null) return Results.Unauthorized();
+        if (!double.TryParse(config["TokenLifetime"], out var expiresIn)) expiresIn = 10;
         var now = DateTime.UtcNow;
         var exp = now.AddMinutes(expiresIn);
         existing.ExpiresAt = exp;
-        existing.CreatedAt = now;
         existing.RefreshToken = TokenGenerator.GenerateRefreshToken();
         existing.Token = TokenGenerator.GenerateToken(rsaKey, existing.UserId, now, expiresIn);
         repository.UpdateToken(existing);
