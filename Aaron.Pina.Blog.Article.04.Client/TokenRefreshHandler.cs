@@ -16,7 +16,7 @@ public class TokenRefreshHandler(TokenStore store) : DelegatingHandler
         try
         {
             if (string.IsNullOrEmpty(store.Token) || string.IsNullOrEmpty(store.RefreshToken)) return response;
-            if (store.Expiry > DateTime.UtcNow)
+            if (store.Expiry < DateTime.UtcNow)
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", store.Token);
                 return await base.SendAsync(request, ct);
