@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Aaron.Pina.Blog.Article._04.Shared;
 using Aaron.Pina.Blog.Article._04.Api;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
@@ -72,15 +73,10 @@ app.MapPost("/refresh", (IConfiguration config, HttpContext context, TokenReposi
 
 app.MapGet("/user", (HttpContext context) =>
     {
-        var expiry = long.TryParse(context.User.FindFirstValue("exp"), out var num)
-            ? DateTimeOffset.FromUnixTimeSeconds(num)
-            : DateTimeOffset.MinValue;
-        return Results.Ok(new
-        {
-            UserId = context.User.FindFirstValue("sub"),
-            Now = DateTime.UtcNow.ToString("o"),
-            Exp = expiry.ToString("o")
-        });
+        if (!long.TryParse(context.User.FindFirstValue("exp"), out var exp)) return Results.Unauthorized();
+        if (!Guid.TryParse(context.User.FindFirstValue("sub"), out var userId)) return Results.Unauthorized();
+        var response = new UserResponse(userId, DateTime.UtcNow, DateTimeOffset.FromUnixTimeSeconds(exp).DateTime);
+        return Results.Ok(response);
     })
    .RequireAuthorization();
 
