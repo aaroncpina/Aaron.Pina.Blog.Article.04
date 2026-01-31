@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Aaron.Pina.Blog.Article._04.Shared;
 using Aaron.Pina.Blog.Article._04.Server;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Security.Claims;
 
@@ -15,6 +16,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<TokenRepository>();
 builder.Services.AddDbContext<TokenDbContext>(Configuration.DbContext.Options);
+builder.Services.Configure<TokenConfig>(builder.Configuration.GetSection(nameof(TokenConfig)));
 
 var app = builder.Build();
 
@@ -27,7 +29,7 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/register", () => Results.Ok(Guid.NewGuid()))
    .AllowAnonymous();
 
-app.MapGet("/token", (IConfiguration config, TokenRepository repository, Guid userId) =>
+app.MapGet("/token", (IOptionsSnapshot<TokenConfig> config, TokenRepository repository, Guid userId) =>
     {
         var existing = repository.TryGetTokenByUserId(userId);
         if (existing is not null)
@@ -38,34 +40,32 @@ app.MapGet("/token", (IConfiguration config, TokenRepository repository, Guid us
                 Message = "Use the /refresh endpoint with your refresh token to get a new token"
             });
         }
-        if (!double.TryParse(config["TokenLifetime"], out var expiresIn)) expiresIn = 10;
         var now = DateTime.UtcNow;
-        var exp = now.AddMinutes(expiresIn);
+        var exp = now.AddMinutes(config.Value.TokenLifetime);
         var entity = new TokenEntity
         {
             UserId = userId,
             ExpiresAt = exp,
             CreatedAt = now,
             RefreshToken = TokenGenerator.GenerateRefreshToken(),
-            Token = TokenGenerator.GenerateToken(rsaKey, userId, now, expiresIn)
+            Token = TokenGenerator.GenerateToken(rsaKey, userId, now, config.Value.TokenLifetime)
         };
         repository.SaveToken(entity);
         return Results.Ok(entity.ToResponse());
     })
    .AllowAnonymous();
 
-app.MapPost("/refresh", (IConfiguration config, HttpContext context, TokenRepository repository) =>
+app.MapPost("/refresh", (IOptionsSnapshot<TokenConfig> config, HttpContext context, TokenRepository repository) =>
     {
         var refreshToken = context.Request.Form["refresh_token"].FirstOrDefault();
         if (string.IsNullOrEmpty(refreshToken)) return Results.BadRequest();
         var existing = repository.TryGetTokenByRefreshToken(refreshToken);
         if (existing is null) return Results.Unauthorized();
-        if (!double.TryParse(config["TokenLifetime"], out var expiresIn)) expiresIn = 10;
         var now = DateTime.UtcNow;
-        var exp = now.AddMinutes(expiresIn);
+        var exp = now.AddMinutes(config.Value.TokenLifetime);
         existing.ExpiresAt = exp;
         existing.RefreshToken = TokenGenerator.GenerateRefreshToken();
-        existing.Token = TokenGenerator.GenerateToken(rsaKey, existing.UserId, now, expiresIn);
+        existing.Token = TokenGenerator.GenerateToken(rsaKey, existing.UserId, now, config.Value.TokenLifetime);
         repository.UpdateToken(existing);
         return Results.Ok(existing.ToResponse());
     })
