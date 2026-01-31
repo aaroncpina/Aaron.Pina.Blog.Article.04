@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
-namespace Aaron.Pina.Blog.Article._04.Api;
+namespace Aaron.Pina.Blog.Article._04.Server;
 
 public static class Configuration
 {

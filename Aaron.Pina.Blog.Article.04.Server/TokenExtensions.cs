@@ -1,6 +1,6 @@
 using Aaron.Pina.Blog.Article._04.Shared;
 
-namespace Aaron.Pina.Blog.Article._04.Api;
+namespace Aaron.Pina.Blog.Article._04.Server;
 
 public static class TokenExtensions
 {

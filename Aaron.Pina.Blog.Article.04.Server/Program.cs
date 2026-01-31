@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Aaron.Pina.Blog.Article._04.Shared;
-using Aaron.Pina.Blog.Article._04.Api;
+using Aaron.Pina.Blog.Article._04.Server;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using System.Security.Claims;

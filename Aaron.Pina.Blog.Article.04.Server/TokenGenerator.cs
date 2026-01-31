@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Buffers.Text;
 
-namespace Aaron.Pina.Blog.Article._04.Api;
+namespace Aaron.Pina.Blog.Article._04.Server;
 
 public static class TokenGenerator
 {

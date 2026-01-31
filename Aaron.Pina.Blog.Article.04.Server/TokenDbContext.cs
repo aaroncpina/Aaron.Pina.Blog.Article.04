@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Aaron.Pina.Blog.Article._04.Api;
+namespace Aaron.Pina.Blog.Article._04.Server;
 
 public class TokenDbContext(DbContextOptions<TokenDbContext> options) : DbContext(options)
 {

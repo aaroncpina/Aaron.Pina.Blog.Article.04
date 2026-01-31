@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aaron.Pina.Blog.Article.04.Api", "Aaron.Pina.Blog.Article.04.Api\Aaron.Pina.Blog.Article.04.Api.csproj", "{BA3F1C14-3E09-4BD4-A044-BB40943069C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aaron.Pina.Blog.Article.04.Server", "Aaron.Pina.Blog.Article.04.Server\Aaron.Pina.Blog.Article.04.Server.csproj", "{BA3F1C14-3E09-4BD4-A044-BB40943069C0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aaron.Pina.Blog.Article.04.Client", "Aaron.Pina.Blog.Article.04.Client\Aaron.Pina.Blog.Article.04.Client.csproj", "{C35FE51F-FFD2-4BDA-957D-1BE180E12E14}"
 EndProject
