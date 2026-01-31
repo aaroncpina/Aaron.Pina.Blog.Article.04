@@ -9,16 +9,4 @@ public static class TokenExtensions
         public TokenResponse ToResponse() => 
             new(token.Token, token.RefreshToken, token.ExpiresAt.Subtract(DateTime.UtcNow).TotalSeconds);
     }
-    
-    extension(TokenResponse response)
-    {
-        public TokenEntity ToEntity(Guid userId = default) => 
-            new()
-            {
-                UserId = userId,
-                Token = response.Token,
-                RefreshToken = response.RefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddSeconds(response.ExpiresIn),
-            };
-    }
 }
